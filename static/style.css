@@ -1,0 +1,13 @@
+body {
+    background: linear-gradient(to right, #e3f2fd, #ffffff);
+}
+
+.upload-card {
+    border-radius: 15px;
+    max-width: 500px;
+    margin: auto;
+}
+
+h2 {
+    font-weight: bold;
+}

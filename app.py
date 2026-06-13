@@ -1,74 +1,46 @@
 from flask import Flask, render_template, request
-import boto3
-from dotenv import load_dotenv
-import os
-
-load_dotenv()
+from PyPDF2 import PdfReader
 
 app = Flask(__name__)
 
-s3 = boto3.client(
-    's3',
-    aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
-    aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
-    region_name=os.getenv("AWS_REGION")
-)
-dynamodb = boto3.resource(
-    'dynamodb',
-    aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
-    aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
-    region_name=os.getenv("AWS_REGION")
-)
+SKILLS_DB = ["python", "aws", "sql", "docker", "kubernetes"]
 
-table = dynamodb.Table('Students')
-BUCKET_NAME = os.getenv("BUCKET_NAME")
+def extract_text(file):
+    reader = PdfReader(file)
+    text = ""
+    for page in reader.pages:
+        text += page.extract_text()
+    return text.lower()
+
+def analyze(text):
+    matched = [s for s in SKILLS_DB if s in text]
+    missing = [s for s in SKILLS_DB if s not in text]
+    score = int((len(matched) / len(SKILLS_DB)) * 100)
+    return score, matched, missing
 
 
 @app.route('/')
 def home():
-
-    objects = s3.list_objects_v2(Bucket=BUCKET_NAME)
-
-    files = []
-
-    if 'Contents' in objects:
-        for obj in objects['Contents']:
-            files.append(obj['Key'])
-
-    return render_template(
-        'index.html',
-        files=files
-    )
+    return render_template("index.html")
 
 
 @app.route('/upload', methods=['POST'])
 def upload():
-
-    name = request.form['name']
-    email = request.form['email']
-
     file = request.files['resume']
 
-    if file:
+    if not file:
+        return "No file uploaded"
 
-        s3.upload_fileobj(
-            file,
-            BUCKET_NAME,
-            file.filename
-        )
+    text = extract_text(file)
+    score, matched, missing = analyze(text)
 
-        table.put_item(
-            Item={
-                'email': email,
-                'name': name,
-                'resume': file.filename
-            }
-        )
+    return render_template(
+        "dashboard.html",
+        score=score,
+        matched_skills=", ".join(matched),
+        missing_skills=", ".join(missing),
+        suggestions="Improve missing skills and add real projects."
+    )
 
-        return f"✅ {file.filename} uploaded successfully!"
-
-    return "No file selected"
-
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run(debug=True)

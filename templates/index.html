@@ -1,27 +1,46 @@
-<form action="/upload" method="POST" enctype="multipart/form-data">
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Smart Placement Analyzer</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
 
-    <input type="text"
-           name="name"
-           placeholder="Enter Name"
-           required>
+<body>
 
-    <br><br>
+<div class="container mt-5">
 
-    <input type="email"
-           name="email"
-           placeholder="Enter Email"
-           required>
+    <div class="card shadow-lg p-4 upload-card">
 
-    <br><br>
+        <h2 class="text-center mb-4">📄 Smart Placement Analyzer</h2>
 
-    <input type="file"
-           name="resume"
-           required>
+        <p class="text-center text-muted">
+            Upload your resume and get ATS score + skill analysis instantly
+        </p>
 
-    <br><br>
+        <form action="/upload" method="POST" enctype="multipart/form-data">
 
-    <button type="submit">
-        Upload Resume
-    </button>
+            <div class="mb-3">
+                <input type="file" name="resume" class="form-control" required>
+            </div>
 
-</form>
+            <div class="mb-3">
+                <select name="job_role" class="form-select">
+                    <option>Software Engineer</option>
+                    <option>Data Analyst</option>
+                    <option>Cyber Security Analyst</option>
+                    <option>Cloud Engineer</option>
+                </select>
+            </div>
+
+            <button class="btn btn-primary w-100">
+                Analyze Resume 🚀
+            </button>
+
+        </form>
+    </div>
+
+</div>
+
+</body>
+</html>
