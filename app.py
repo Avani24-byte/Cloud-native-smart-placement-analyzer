@@ -13,7 +13,14 @@ s3 = boto3.client(
     aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
     region_name=os.getenv("AWS_REGION")
 )
+dynamodb = boto3.resource(
+    'dynamodb',
+    aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+    aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
+    region_name=os.getenv("AWS_REGION")
+)
 
+table = dynamodb.Table('Students')
 BUCKET_NAME = os.getenv("BUCKET_NAME")
 
 
@@ -40,19 +47,25 @@ def upload():
     name = request.form['name']
     email = request.form['email']
 
-    print("Name:", name)
-    print("Email:", email)
-
     file = request.files['resume']
 
     if file:
+
         s3.upload_fileobj(
             file,
             BUCKET_NAME,
             file.filename
         )
 
-        return f"✅ {file.filename} uploaded successfully to AWS S3!"
+        table.put_item(
+            Item={
+                'email': email,
+                'name': name,
+                'resume': file.filename
+            }
+        )
+
+        return f"✅ {file.filename} uploaded successfully!"
 
     return "No file selected"
 
