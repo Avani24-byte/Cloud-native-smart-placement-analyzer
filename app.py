@@ -43,9 +43,94 @@ JOB_DESCRIPTIONS = {
 }
 
 # =====================================
-# REQUIRED SKILLS DATABASE
+# SKILL ALIASES
 # =====================================
-SKILLS_DB = {
+SKILL_ALIASES = {
+    "python": ["python"],
+    "java": ["java"],
+    "sql": ["sql"],
+
+    "html": ["html"],
+    "css": ["css"],
+
+    "javascript": [
+        "javascript",
+        "js"
+    ],
+
+    "react": [
+        "react",
+        "reactjs",
+        "react js",
+        "react.js"
+    ],
+
+    "node.js": [
+        "node",
+        "nodejs",
+        "node js",
+        "node.js"
+    ],
+
+    "git": ["git"],
+
+    "aws": [
+        "aws",
+        "amazon web services"
+    ],
+
+    "docker": ["docker"],
+
+    "kubernetes": [
+        "kubernetes",
+        "k8s"
+    ],
+
+    "api": [
+        "api",
+        "rest api",
+        "restful api"
+    ],
+
+    "penetration testing": [
+        "penetration testing",
+        "pentesting"
+    ],
+
+    "network security": [
+        "network security"
+    ],
+
+    "siem": [
+        "siem"
+    ],
+
+    "encryption": [
+        "encryption"
+    ],
+
+    "azure": [
+        "azure"
+    ],
+
+    "terraform": [
+        "terraform"
+    ],
+
+    "devops": [
+        "devops"
+    ],
+
+    "ci/cd": [
+        "ci/cd",
+        "cicd"
+    ]
+}
+
+# =====================================
+# ROLE-SPECIFIC REQUIRED SKILLS
+# =====================================
+ROLE_SKILLS = {
     "Software Engineer": [
         "python",
         "java",
@@ -64,8 +149,7 @@ SKILLS_DB = {
         "react",
         "node.js",
         "sql",
-        "git",
-        "api"
+        "git"
     ],
 
     "Cyber Security Analyst": [
@@ -88,15 +172,42 @@ SKILLS_DB = {
 }
 
 # =====================================
-# RESUME ANALYSIS FUNCTION
+# FIND SKILLS IN RESUME
+# =====================================
+def find_skills(resume_text, required_skills):
+
+    matched_skills = []
+    missing_skills = []
+
+    for skill in required_skills:
+
+        aliases = SKILL_ALIASES.get(skill, [skill])
+
+        found = False
+
+        for alias in aliases:
+            if alias.lower() in resume_text:
+                found = True
+                break
+
+        if found:
+            matched_skills.append(skill)
+        else:
+            missing_skills.append(skill)
+
+    return matched_skills, missing_skills
+
+
+# =====================================
+# ANALYZE RESUME
 # =====================================
 def analyze_resume(resume_text, job_role):
 
     job_text = JOB_DESCRIPTIONS.get(job_role, "")
-    required_skills = SKILLS_DB.get(job_role, [])
 
-    # NLP Semantic Similarity
-    embeddings = model.encode([resume_text, job_text])
+    embeddings = model.encode(
+        [resume_text, job_text]
+    )
 
     semantic_score = cosine_similarity(
         [embeddings[0]],
@@ -105,17 +216,13 @@ def analyze_resume(resume_text, job_role):
 
     semantic_score = semantic_score * 100
 
-    # Skill Matching
-    matched_skills = []
-    missing_skills = []
+    required_skills = ROLE_SKILLS.get(job_role, [])
 
-    for skill in required_skills:
-        if skill.lower() in resume_text:
-            matched_skills.append(skill)
-        else:
-            missing_skills.append(skill)
+    matched_skills, missing_skills = find_skills(
+        resume_text,
+        required_skills
+    )
 
-    # Skill Score
     if len(required_skills) > 0:
         skill_score = (
             len(matched_skills) /
@@ -124,7 +231,6 @@ def analyze_resume(resume_text, job_role):
     else:
         skill_score = 0
 
-    # Final ATS Score
     final_score = round(
         (semantic_score * 0.6) +
         (skill_score * 0.4),
@@ -133,6 +239,7 @@ def analyze_resume(resume_text, job_role):
 
     return final_score, matched_skills, missing_skills
 
+
 # =====================================
 # HOME PAGE
 # =====================================
@@ -140,8 +247,9 @@ def analyze_resume(resume_text, job_role):
 def home():
     return render_template("index.html")
 
+
 # =====================================
-# UPLOAD AND ANALYZE
+# UPLOAD PAGE
 # =====================================
 @app.route('/upload', methods=['POST'])
 def upload():
@@ -154,12 +262,12 @@ def upload():
 
     try:
 
-        # Read PDF
         reader = PdfReader(file)
 
         resume_text = ""
 
         for page in reader.pages:
+
             text = page.extract_text()
 
             if text:
@@ -167,39 +275,45 @@ def upload():
 
         resume_text = resume_text.lower()
 
-        # DEBUGGING
-        print("\n========== DEBUG ==========")
-        print("Resume Length:", len(resume_text))
-        print(resume_text[:1000])
-        print("===========================\n")
+        # =================================
+        # DEBUG OUTPUT
+        # =================================
+        print("\n======= RESUME TEXT =======\n")
+        print(resume_text)
+        print("\n===========================\n")
 
-        # Analyze Resume
+        print("Resume Length:", len(resume_text))
+
         score, matched_skills, missing_skills = analyze_resume(
             resume_text,
             job_role
         )
 
-        # Suggestions
         if score >= 80:
-            suggestion = "Excellent match! Your resume aligns well with the selected role."
+            suggestion = "Excellent match! Your resume aligns very well with the selected role."
         elif score >= 60:
-            suggestion = "Good match. Add more relevant projects and skills to improve your ATS score."
+            suggestion = "Good match. Add more role-specific projects and skills."
         else:
-            suggestion = "Your resume needs improvement. Consider adding missing skills, certifications, and projects."
+            suggestion = "Resume needs improvement. Focus on missing skills and relevant projects."
 
         return render_template(
             "dashboard.html",
             score=score,
-            matched_skills=", ".join(matched_skills) if matched_skills else "No matching skills found",
-            missing_skills=", ".join(missing_skills) if missing_skills else "None",
+            matched_skills=", ".join(matched_skills)
+            if matched_skills else "No matching skills found",
+
+            missing_skills=", ".join(missing_skills)
+            if missing_skills else "None",
+
             suggestions=suggestion
         )
 
     except Exception as e:
         return f"Error processing resume: {str(e)}"
 
+
 # =====================================
-# RUN APPLICATION
+# RUN APP
 # =====================================
 if __name__ == "__main__":
     app.run(debug=True)
