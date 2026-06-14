@@ -197,6 +197,23 @@ def find_skills(resume_text, required_skills):
 
     return matched_skills, missing_skills
 
+def extract_all_skills(resume_text):
+
+    found_skills = []
+
+    for skill, aliases in SKILL_ALIASES.items():
+
+        for alias in aliases:
+
+            if alias.lower() in resume_text:
+
+                if skill not in found_skills:
+                    found_skills.append(skill)
+
+                break
+
+    return found_skills
+
 
 # =====================================
 # ANALYZE RESUME
@@ -238,6 +255,26 @@ def analyze_resume(resume_text, job_role):
     )
 
     return final_score, matched_skills, missing_skills
+
+def compare_all_roles(resume_text):
+
+    role_scores = {}
+
+    for role in JOB_DESCRIPTIONS.keys():
+
+        score, _, _ = analyze_resume(
+            resume_text,
+            role
+        )
+
+        role_scores[role] = score
+
+    best_role = max(
+        role_scores,
+        key=role_scores.get
+    )
+
+    return role_scores, best_role
 
 
 # =====================================
@@ -289,24 +326,44 @@ def upload():
             job_role
         )
 
+        all_skills = extract_all_skills(
+         resume_text
+        )
+
+        role_scores, best_role = compare_all_roles(
+        resume_text
+        )
+
         if score >= 80:
             suggestion = "Excellent match! Your resume aligns very well with the selected role."
         elif score >= 60:
             suggestion = "Good match. Add more role-specific projects and skills."
         else:
             suggestion = "Resume needs improvement. Focus on missing skills and relevant projects."
-
+        print("Role Scores:", role_scores)
+        print("Best Role:", best_role)
+        print("All Skills:", all_skills)
+        
         return render_template(
-            "dashboard.html",
-            score=score,
-            matched_skills=", ".join(matched_skills)
-            if matched_skills else "No matching skills found",
+    "dashboard.html",
 
-            missing_skills=", ".join(missing_skills)
-            if missing_skills else "None",
+    score=score,
 
-            suggestions=suggestion
-        )
+    matched_skills=", ".join(matched_skills)
+    if matched_skills else "No matching skills found",
+
+    missing_skills=", ".join(missing_skills)
+    if missing_skills else "None",
+
+    all_skills=", ".join(all_skills)
+    if all_skills else "No skills detected",
+
+    role_scores=role_scores,
+
+    best_role=best_role,
+
+    suggestions=suggestion
+)
 
     except Exception as e:
         return f"Error processing resume: {str(e)}"

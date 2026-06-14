@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html>
 <head>
     <title>Analysis Result</title>
@@ -9,34 +10,90 @@
 
 <div class="container mt-5">
 
-    <h2 class="text-center mb-4">📊 Resume Analysis Dashboard</h2>
+```
+<h2 class="text-center mb-4">
+    📊 Resume Analysis Dashboard
+</h2>
 
-    <!-- ATS SCORE CARD -->
-    <div class="card p-4 shadow-sm mb-3 text-center">
-        <h4>ATS Score</h4>
-        <h1 class="text-success">{{ score }}%</h1>
-    </div>
+<!-- ATS SCORE -->
+<div class="card p-4 shadow-sm mb-3 text-center">
+    <h4>ATS Score</h4>
+    <h1 class="text-success">{{ score }}%</h1>
+</div>
 
-    <!-- SKILLS MATCH -->
-    <div class="card p-4 shadow-sm mb-3">
-        <h4>✔ Matched Skills</h4>
-        <p>{{ matched_skills }}</p>
-    </div>
+<!-- DETECTED SKILLS -->
+<div class="card p-4 shadow-sm mb-3">
+    <h4>🛠 Skills Detected in Resume</h4>
+    <p>{{ all_skills | default('No skills detected') }}</p>
+</div>
 
-    <div class="card p-4 shadow-sm mb-3">
-        <h4>❌ Missing Skills</h4>
-        <p>{{ missing_skills }}</p>
-    </div>
+<!-- MATCHED SKILLS -->
+<div class="card p-4 shadow-sm mb-3">
+    <h4>✔ Matched Skills</h4>
+    <p>{{ matched_skills }}</p>
+</div>
 
-    <!-- RECOMMENDATION -->
-    <div class="card p-4 shadow-sm">
-        <h4>💡 Recommendations</h4>
-        <p>{{ suggestions }}</p>
-    </div>
+<!-- MISSING SKILLS -->
+<div class="card p-4 shadow-sm mb-3">
+    <h4>❌ Missing Skills</h4>
+    <p>{{ missing_skills }}</p>
+</div>
 
-    <div class="text-center mt-4">
-        <a href="/" class="btn btn-primary">Analyze Another Resume</a>
-    </div>
+<!-- BEST ROLE -->
+<div class="card p-4 shadow-sm mb-3 text-center">
+    <h4>🏆 Best Fit Role</h4>
+    <h2 class="text-success">
+        {{ best_role | default('Not Available') }}
+    </h2>
+</div>
+
+<!-- ROLE COMPARISON -->
+<div class="card p-4 shadow-sm mb-3">
+    <h4>📊 Role Comparison</h4>
+
+    {% if role_scores %}
+
+    <table class="table table-bordered">
+
+        <thead>
+            <tr>
+                <th>Role</th>
+                <th>Score</th>
+            </tr>
+        </thead>
+
+        <tbody>
+
+            {% for role, value in role_scores.items() %}
+            <tr>
+                <td>{{ role }}</td>
+                <td>{{ value }}%</td>
+            </tr>
+            {% endfor %}
+
+        </tbody>
+
+    </table>
+
+    {% else %}
+
+    <p>No role comparison available.</p>
+
+    {% endif %}
+</div>
+
+<!-- RECOMMENDATIONS -->
+<div class="card p-4 shadow-sm mb-3">
+    <h4>💡 Recommendations</h4>
+    <p>{{ suggestions }}</p>
+</div>
+
+<div class="text-center mt-4">
+    <a href="/" class="btn btn-primary">
+        Analyze Another Resume
+    </a>
+</div>
+```
 
 </div>
 
