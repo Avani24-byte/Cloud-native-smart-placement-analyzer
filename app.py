@@ -2,6 +2,8 @@ from flask import Flask, render_template, request
 from PyPDF2 import PdfReader
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
+import json
+import traceback
 
 app = Flask(__name__)
 
@@ -226,10 +228,12 @@ def analyze_resume(resume_text, job_role):
         [resume_text, job_text]
     )
 
-    semantic_score = cosine_similarity(
-        [embeddings[0]],
-        [embeddings[1]]
-    )[0][0]
+    semantic_score = float(
+        cosine_similarity(
+            [embeddings[0]],
+            [embeddings[1]]
+        )[0][0]
+    )
 
     semantic_score = semantic_score * 100
 
@@ -241,18 +245,18 @@ def analyze_resume(resume_text, job_role):
     )
 
     if len(required_skills) > 0:
-        skill_score = (
+        skill_score = float(
             len(matched_skills) /
             len(required_skills)
         ) * 100
     else:
-        skill_score = 0
+        skill_score = 0.0
 
-    final_score = round(
+    final_score = float(round(
         (semantic_score * 0.6) +
         (skill_score * 0.4),
         2
-    )
+    ))
 
     return final_score, matched_skills, missing_skills
 
@@ -267,7 +271,7 @@ def compare_all_roles(resume_text):
             role
         )
 
-        role_scores[role] = score
+        role_scores[role] = round(float(score), 2)
 
     best_role = max(
         role_scores,
@@ -343,34 +347,35 @@ def upload():
         print("Role Scores:", role_scores)
         print("Best Role:", best_role)
         print("All Skills:", all_skills)
-        
+
+
         return render_template(
-    "dashboard.html",
-
-    score=score,
-
-    matched_skills=", ".join(matched_skills)
-    if matched_skills else "No matching skills found",
-
-    missing_skills=", ".join(missing_skills)
-    if missing_skills else "None",
-
-    all_skills=", ".join(all_skills)
-    if all_skills else "No skills detected",
-
-    role_scores=role_scores,
-
-    best_role=best_role,
-
-    suggestions=suggestion
-)
+            "dashboard.html",
+            score=score,
+            matched_skills=", ".join(matched_skills)
+            if matched_skills else "No matching skills found",
+            missing_skills=", ".join(missing_skills)
+            if missing_skills else "None",
+            all_skills=", ".join(all_skills)
+            if all_skills else "No skills detected",
+            role_scores=role_scores,
+            best_role=best_role,
+            role_labels=list(role_scores.keys()),
+            role_values=[float(v) for v in role_scores.values()],
+            suggestions=suggestion,
+        )
 
     except Exception as e:
-        return f"Error processing resume: {str(e)}"
+
+        print("\n========== ERROR ==========\n")
+        traceback.print_exc()
+        print("\n===========================\n")
+
+    return f"Error processing resume: {str(e)}"
 
 
 # =====================================
 # RUN APP
 # =====================================
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, use_reloader=False)

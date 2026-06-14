@@ -1,101 +1,207 @@
 <!DOCTYPE html>
-
 <html>
 <head>
     <title>Analysis Result</title>
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+
+        .progress-circle {
+            position: relative;
+            width: 220px;
+            height: 220px;
+            margin: auto;
+        }
+
+        .score-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 36px;
+            font-weight: bold;
+            color: #198754;
+        }
+
+        .progress-ring-circle {
+            transition: stroke-dashoffset 2s ease-in-out;
+        }
+
+        body {
+            background-color: #f8f9fa;
+        }
+
+        .card {
+            border-radius: 15px;
+        }
+
+    </style>
+
 </head>
 
 <body>
 
-<div class="container mt-5">
+<div class="container mt-5 mb-5">
 
-```
-<h2 class="text-center mb-4">
-    📊 Resume Analysis Dashboard
-</h2>
-
-<!-- ATS SCORE -->
-<div class="card p-4 shadow-sm mb-3 text-center">
-    <h4>ATS Score</h4>
-    <h1 class="text-success">{{ score }}%</h1>
-</div>
-
-<!-- DETECTED SKILLS -->
-<div class="card p-4 shadow-sm mb-3">
-    <h4>🛠 Skills Detected in Resume</h4>
-    <p>{{ all_skills | default('No skills detected') }}</p>
-</div>
-
-<!-- MATCHED SKILLS -->
-<div class="card p-4 shadow-sm mb-3">
-    <h4>✔ Matched Skills</h4>
-    <p>{{ matched_skills }}</p>
-</div>
-
-<!-- MISSING SKILLS -->
-<div class="card p-4 shadow-sm mb-3">
-    <h4>❌ Missing Skills</h4>
-    <p>{{ missing_skills }}</p>
-</div>
-
-<!-- BEST ROLE -->
-<div class="card p-4 shadow-sm mb-3 text-center">
-    <h4>🏆 Best Fit Role</h4>
-    <h2 class="text-success">
-        {{ best_role | default('Not Available') }}
+    <h2 class="text-center mb-4">
+        📊 Resume Analysis Dashboard
     </h2>
+
+    <!-- ATS SCORE -->
+    <div class="card p-4 shadow-sm mb-4 text-center">
+
+        <h4 class="mb-4">🎯 ATS Score</h4>
+
+        <div class="progress-circle">
+
+            <svg width="220" height="220">
+
+                <!-- Background Circle -->
+                <circle
+                    cx="110"
+                    cy="110"
+                    r="90"
+                    stroke="#e9ecef"
+                    stroke-width="15"
+                    fill="none"
+                />
+
+                <!-- Progress Circle -->
+                <circle
+                    id="progressRing"
+                    class="progress-ring-circle"
+                    cx="110"
+                    cy="110"
+                    r="90"
+                    stroke="#198754"
+                    stroke-width="15"
+                    fill="none"
+                    stroke-linecap="round"
+                    stroke-dasharray="565"
+                    stroke-dashoffset="565"
+                    transform="rotate(-90 110 110)"
+                />
+
+            </svg>
+
+            <div class="score-text">
+                {{ score }}%
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- DETECTED SKILLS -->
+    <div class="card p-4 shadow-sm mb-3">
+
+        <h4>🛠 Skills Detected in Resume</h4>
+
+        <p>{{ all_skills }}</p>
+
+    </div>
+
+    <!-- MATCHED SKILLS -->
+    <div class="card p-4 shadow-sm mb-3">
+
+        <h4>✔ Matched Skills</h4>
+
+        <p>{{ matched_skills }}</p>
+
+    </div>
+
+    <!-- MISSING SKILLS -->
+    <div class="card p-4 shadow-sm mb-3">
+
+        <h4>❌ Missing Skills</h4>
+
+        <p>{{ missing_skills }}</p>
+
+    </div>
+
+    <!-- BEST ROLE -->
+    <div class="card p-4 shadow-sm mb-3 text-center">
+
+        <h4>🏆 Best Fit Role</h4>
+
+        <h2 class="text-success">
+            {{ best_role }}
+        </h2>
+
+    </div>
+
+    <!-- ROLE COMPARISON -->
+    <div class="card p-4 shadow-sm mb-3">
+
+        <h4>📊 Role Comparison</h4>
+
+        <table class="table table-bordered table-striped">
+
+            <thead class="table-dark">
+
+                <tr>
+                    <th>Job Role</th>
+                    <th>Match Score (%)</th>
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                {% for role, value in role_scores.items() %}
+
+                <tr>
+                    <td>{{ role }}</td>
+                    <td>{{ value }}</td>
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+    <!-- RECOMMENDATIONS -->
+    <div class="card p-4 shadow-sm mb-3">
+
+        <h4>💡 Recommendations</h4>
+
+        <p>{{ suggestions }}</p>
+
+    </div>
+
+    <div class="text-center mt-4">
+
+        <a href="/" class="btn btn-primary">
+            Analyze Another Resume
+        </a>
+
+    </div>
+
 </div>
 
-<!-- ROLE COMPARISON -->
-<div class="card p-4 shadow-sm mb-3">
-    <h4>📊 Role Comparison</h4>
+<!-- ATS SCORE ANIMATION -->
+<script>
 
-    {% if role_scores %}
+document.addEventListener("DOMContentLoaded", function() {
 
-    <table class="table table-bordered">
+    var score = Number("{{ score }}");
 
-        <thead>
-            <tr>
-                <th>Role</th>
-                <th>Score</th>
-            </tr>
-        </thead>
+    var circumference = 565;
 
-        <tbody>
+    var offset =
+        circumference -
+        (score / 100) * circumference;
 
-            {% for role, value in role_scores.items() %}
-            <tr>
-                <td>{{ role }}</td>
-                <td>{{ value }}%</td>
-            </tr>
-            {% endfor %}
+    document.getElementById("progressRing")
+        .style.strokeDashoffset = offset;
 
-        </tbody>
+});
 
-    </table>
-
-    {% else %}
-
-    <p>No role comparison available.</p>
-
-    {% endif %}
-</div>
-
-<!-- RECOMMENDATIONS -->
-<div class="card p-4 shadow-sm mb-3">
-    <h4>💡 Recommendations</h4>
-    <p>{{ suggestions }}</p>
-</div>
-
-<div class="text-center mt-4">
-    <a href="/" class="btn btn-primary">
-        Analyze Another Resume
-    </a>
-</div>
-```
-
-</div>
+</script>
 
 </body>
 </html>
