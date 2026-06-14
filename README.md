@@ -4,8 +4,8 @@ Current Features:
 - Resume Dashboard
 - Student Information Collection
 - DynamoDB Integration
+- ATS Score Generation
 
 Upcoming Features:
 - Resume Parsing
-- ATS Score Generation
 - Job Recommendation Engine
