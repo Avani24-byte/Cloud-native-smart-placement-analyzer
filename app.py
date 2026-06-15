@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 import os
 import PyPDF2
 import io
+from datetime import datetime
 
 load_dotenv()
 
@@ -16,9 +17,17 @@ s3 = boto3.client(
     region_name=os.getenv("AWS_REGION")
 )
 
+dynamodb = boto3.resource(
+    'dynamodb',
+    aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+    aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
+    region_name=os.getenv("AWS_REGION")
+)
+
+table = dynamodb.Table('Students')
+
 BUCKET_NAME = os.getenv("BUCKET_NAME")
 
-# Skills database for each role
 ROLE_SKILLS = {
     "Software Engineer": ["python", "java", "c++", "data structures", "algorithms", "git", "sql", "linux", "oop", "rest api"],
     "Web Development": ["html", "css", "javascript", "react", "nodejs", "git", "sql", "rest api", "bootstrap", "mongodb"],
@@ -36,31 +45,25 @@ def extract_text_from_pdf(file_bytes):
 
 
 def analyze_resume(text, selected_role):
-    # Detect all skills from resume across all roles
     all_detected = set()
     for skills in ROLE_SKILLS.values():
         for skill in skills:
             if skill in text:
                 all_detected.add(skill)
 
-    # Match against selected role
     role_skills = ROLE_SKILLS.get(selected_role, [])
     matched = [s for s in role_skills if s in text]
     missing = [s for s in role_skills if s not in text]
 
-    # ATS score based on selected role
     score = int((len(matched) / len(role_skills)) * 100) if role_skills else 0
 
-    # Role comparison scores
     role_scores = {}
     for role, skills in ROLE_SKILLS.items():
         matched_count = sum(1 for s in skills if s in text)
         role_scores[role] = int((matched_count / len(skills)) * 100)
 
-    # Best fit role
     best_role = max(role_scores, key=role_scores.get)
 
-    # Suggestions
     if missing:
         suggestions = f"Consider adding these skills to improve your resume: {', '.join(missing)}"
     else:
@@ -89,12 +92,12 @@ def home():
 
 @app.route('/upload', methods=['POST'])
 def upload():
+    name = request.form.get('name', '')
+    email = request.form.get('email', '')
     job_role = request.form.get('job_role', 'Software Engineer')
-    print("Selected role:", job_role)
     file = request.files['resume']
 
     if file:
-        # Read file bytes
         file_bytes = file.read()
 
         # Upload to S3
@@ -104,12 +107,33 @@ def upload():
             file.filename
         )
 
-        # Extract text and analyze
+        # Analyze resume
         text = extract_text_from_pdf(file_bytes)
         results = analyze_resume(text, job_role)
 
-        # Render dashboard with results
-        return render_template('dashboard.html', **results)
+        # Save to DynamoDB
+        try:
+            table.put_item(Item={
+                'email': email,
+                'name': name,
+                'job_role': job_role,
+                'filename': file.filename,
+                'ats_score': results['score'],
+                'matched_skills': results['matched_skills'],
+                'missing_skills': results['missing_skills'],
+                'best_role': results['best_role'],
+                'uploaded_at': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            })
+            print(f"✅ Saved to DynamoDB: {email}")
+        except Exception as e:
+            print(f"❌ DynamoDB Error: {e}")
+
+        return render_template('dashboard.html',
+            name=name,
+            email=email,
+            job_role=job_role,
+            **results
+        )
 
     return "No file selected"
 
