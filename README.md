@@ -155,8 +155,3 @@ eb deploy smartplacement-env2
 **Avani J C**  
 [GitHub](https://github.com/Avani24-byte)
 
----
-
-## 📜 License
-
-This project is for educational purposes.
