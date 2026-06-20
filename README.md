@@ -131,6 +131,9 @@ eb deploy smartplacement-env2
 ```
 
 ---
+## Ongoing
+
+- Email report via AWS SES 
 
 ## 📊 Supported Job Roles
 
