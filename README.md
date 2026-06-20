@@ -135,6 +135,8 @@ eb deploy smartplacement-env2
 
 - Email report via AWS SES 
 
+---
+
 ## 📊 Supported Job Roles
 
 - Software Engineer
