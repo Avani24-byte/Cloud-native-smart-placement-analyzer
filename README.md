@@ -16,6 +16,7 @@ A web application that analyzes resumes and provides ATS scores, skill detection
 - 📊 Role comparison with visual progress bars
 - 💡 Personalized recommendations
 - 💾 Results saved to AWS DynamoDB
+- 📧 Automated email report sent via AWS SES
 - 🌐 Deployed live on AWS Elastic Beanstalk
 
 ---
@@ -131,9 +132,15 @@ eb deploy smartplacement-env2
 ```
 
 ---
-## Ongoing
+## 📧 Email Reports (AWS SES)
 
-- Email report via AWS SES 
+After analysis, students automatically receive an email with:
+- ATS Score
+- Matched & Missing Skills
+- Best Fit Role
+- Recommendations
+
+> **Note:** AWS SES is currently in **Sandbox Mode**, so emails can only be sent to verified email addresses. To send to any recipient, request **Production Access** in the AWS SES console.
 
 ---
 
