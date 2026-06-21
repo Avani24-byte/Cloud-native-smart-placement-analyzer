@@ -5,6 +5,7 @@ import os
 import PyPDF2
 import io
 from datetime import datetime
+from botocore.exceptions import ClientError
 
 load_dotenv()
 
@@ -25,6 +26,15 @@ dynamodb = boto3.resource(
 )
 
 table = dynamodb.Table('Students')
+
+ses = boto3.client(
+    'ses',
+    aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+    aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
+    region_name="eu-north-1"
+)
+
+SENDER_EMAIL = "avnichandan2465@gmail.com"
 
 BUCKET_NAME = os.getenv("BUCKET_NAME")
 
@@ -79,6 +89,46 @@ def analyze_resume(text, selected_role):
         "suggestions": suggestions
     }
 
+def send_email_report(to_email, name, results):
+    subject = "📊 Your Resume Analysis Report - Smart Placement Analyzer"
+
+    body_html = f"""
+    <html>
+    <body style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;">
+        <div style="max-width: 600px; margin: auto; background: white; border-radius: 10px; padding: 30px;">
+            <h2 style="color: #4f46e5;">📄 Resume Analysis Report</h2>
+            <p>Hi <strong>{name}</strong>,</p>
+            <p>Here's your resume analysis summary:</p>
+
+            <div style="background: #f0f0ff; padding: 15px; border-radius: 8px; margin: 15px 0;">
+                <h3 style="color: #7c3aed; margin: 0;">🎯 ATS Score: {results['score']}%</h3>
+            </div>
+
+            <p><strong>✅ Matched Skills:</strong><br>{results['matched_skills']}</p>
+            <p><strong>❌ Missing Skills:</strong><br>{results['missing_skills']}</p>
+            <p><strong>🏆 Best Fit Role:</strong> {results['best_role']}</p>
+            <p><strong>💡 Recommendation:</strong><br>{results['suggestions']}</p>
+
+            <hr style="margin: 20px 0;">
+            <p style="color: #888; font-size: 0.9em;">Sent automatically by Smart Placement Analyzer 🚀</p>
+        </div>
+    </body>
+    </html>
+    """
+
+    try:
+        ses.send_email(
+            Source=SENDER_EMAIL,
+            Destination={'ToAddresses': [to_email]},
+            Message={
+                'Subject': {'Data': subject},
+                'Body': {'Html': {'Data': body_html}}
+            }
+        )
+        print(f"✅ Email sent to {to_email}")
+    except ClientError as e:
+        print(f"❌ SES Error: {e.response['Error']['Message']}")
+
 
 @app.route('/')
 def home():
@@ -127,6 +177,9 @@ def upload():
             print(f"✅ Saved to DynamoDB: {email}")
         except Exception as e:
             print(f"❌ DynamoDB Error: {e}")
+
+            # Send email report
+        send_email_report(email, name, results)
 
         return render_template('dashboard.html',
             name=name,
