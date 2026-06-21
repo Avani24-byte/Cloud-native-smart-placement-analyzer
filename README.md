@@ -15,7 +15,7 @@ A web application that analyzes resumes and provides ATS scores, skill detection
 - 🏆 Best fit job role recommendation
 - 📊 Role comparison with visual progress bars
 - 💡 Personalized recommendations
-- 💾 Results saved to AWS DynamoDB
+- 💾 Full upload history saved to AWS DynamoDB (per-student timeline, not overwritten)
 - 📧 Automated email report sent via AWS SES
 - 🌐 Deployed live on AWS Elastic Beanstalk
 
@@ -38,7 +38,7 @@ A web application that analyzes resumes and provides ATS scores, skill detection
 ## ☁️ AWS Services Used
 
 - **S3** — Stores uploaded resume PDFs
-- **DynamoDB** — Saves analysis results per student
+- **DynamoDB** — Stores every resume analysis as a separate record using `email` (partition key) + `uploaded_at` (sort key), preserving full upload history per student
 - **Elastic Beanstalk** — Hosts and runs the Flask application
 
 ---
@@ -153,9 +153,18 @@ After analysis, students automatically receive an email with:
 
 ---
 
+## 🗂 Database Design
+
+The `StudentsHistory` table uses a composite key:
+- **Partition key:** `email`
+- **Sort key:** `uploaded_at`
+
+This allows each student to have multiple resume analyses stored over time instead of overwriting previous results — enabling a complete history of their progress.
+
+---
+
 ## 🔮 Planned Features
 
-- 📧 Email report via AWS SES
 - 📄 Better PDF parsing with AWS Textract
 - 🔐 User authentication with AWS Cognito
 - 🌍 Custom domain name
