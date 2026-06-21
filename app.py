@@ -25,7 +25,7 @@ dynamodb = boto3.resource(
     region_name="eu-north-1"
 )
 
-table = dynamodb.Table('Students')
+table = dynamodb.Table('StudentsHistory')
 
 ses = boto3.client(
     'ses',
