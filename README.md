@@ -177,9 +177,4 @@ This allows each student to have multiple resume analyses stored over time inste
 [GitHub](https://github.com/Avani24-byte)
 
 
----
-
-## 📜 License
-
-This project is for educational purposes.
 
